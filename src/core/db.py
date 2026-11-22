@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, create_engine
 
-from src.core import models  # noqa: F401 – damit die Tabellen bekannt sind
+from src.core import models as core_models  # noqa: F401
+from src.einkauf import models as einkauf_models  # noqa: F401
 
 engine = create_engine("sqlite:///data/minierp.db", echo=True)
 

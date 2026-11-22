@@ -35,3 +35,10 @@ class Benutzer(SQLModel, table=True):
     name: str
     email: str
     rolle: Rolle = Rolle.MITARBEITER
+
+class Kostenstelle(SQLModel, table=True):
+        id: int | None = Field(default=None, primary_key=True)
+        mandant_id: int = Field(foreign_key="mandant.id", index=True)
+        abteilung_id: int = Field(foreign_key="abteilung.id")
+        nummer: str
+        name: str
