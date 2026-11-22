@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-
+from datetime import datetime, timezone
 from sqlmodel import Field, SQLModel
 
 
@@ -44,7 +44,7 @@ class Bestellung(SQLModel, table=True):
     lieferant_id: int = Field(foreign_key="lieferant.id")
     kostenstelle_id: int = Field(foreign_key="kostenstelle.id")
     status: BestellStatus = BestellStatus.ENTWURF
-    erstellt_am: datetime = Field(default_factory=datetime.now)
+    erstellt_am: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class BestellPosition(SQLModel, table=True):
