@@ -200,15 +200,15 @@ def lege_firma_an(session: Session, firma: dict) -> None:
                     ))
 
 
-def main() -> None:
-    SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
+def befuelle(ziel_engine) -> None:
+    SQLModel.metadata.drop_all(ziel_engine)
+    SQLModel.metadata.create_all(ziel_engine)
+    with Session(ziel_engine) as session:
         for firma in FIRMEN:
             lege_firma_an(session, firma)
         session.commit()
+
+
+def main() -> None:
+    befuelle(engine)
     print("Demo-Daten angelegt.")
-
-
-if __name__ == "__main__":
-    main()

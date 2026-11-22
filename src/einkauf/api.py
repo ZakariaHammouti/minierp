@@ -1,11 +1,20 @@
+from collections import defaultdict
+from datetime import datetime
 from decimal import Decimal
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from sqlmodel import select
+from sqlmodel import col, select
 
 from src.core.deps import MandantDep, SessionDep
-from src.einkauf.models import Artikel, Lieferant, LieferantArtikel
+from src.einkauf.models import (
+    Artikel,
+    BestellPosition,
+    BestellStatus,
+    Bestellung,
+    Lieferant,
+    LieferantArtikel,
+)
 
 router = APIRouter(prefix="/einkauf", tags=["Einkauf"])
 
@@ -50,3 +59,44 @@ def angebote_fuer_artikel(artikel_id: int, session: SessionDep, mandant_id: Mand
 def alle_lieferanten(session: SessionDep, mandant_id: MandantDep) -> list[Lieferant]:
     abfrage = select(Lieferant).where(Lieferant.mandant_id == mandant_id)
     return list(session.exec(abfrage).all())
+
+class BestellUebersicht(BaseModel):
+    id: int
+    lieferant: str
+    kostenstelle_id: int
+    status: BestellStatus
+    erstellt_am: datetime
+    summe: Decimal
+
+
+@router.get("/bestellungen")
+def alle_bestellungen(
+    session: SessionDep,
+    mandant_id: MandantDep,
+    kostenstelle_id: int | None = None,
+) -> list[BestellUebersicht]:
+    abfrage = (
+        select(Bestellung, Lieferant)
+        .join(Lieferant, Bestellung.lieferant_id == Lieferant.id)
+        .where(Bestellung.mandant_id == mandant_id)
+    )
+    if kostenstelle_id is not None:
+        abfrage = abfrage.where(Bestellung.kostenstelle_id == kostenstelle_id)
+    abfrage = abfrage.order_by(col(Bestellung.erstellt_am).desc())
+
+    summen: dict[int, Decimal] = defaultdict(Decimal)
+    positionen = session.exec(select(BestellPosition).where(BestellPosition.mandant_id == mandant_id)).all()
+    for position in positionen:
+        summen[position.bestellung_id] += position.menge * position.einzelpreis
+
+    return [
+        BestellUebersicht(
+            id=bestellung.id,
+            lieferant=lieferant.name,
+            kostenstelle_id=bestellung.kostenstelle_id,
+            status=bestellung.status,
+            erstellt_am=bestellung.erstellt_am,
+            summe=summen[bestellung.id],
+        )
+        for bestellung, lieferant in session.exec(abfrage).all()
+    ]
