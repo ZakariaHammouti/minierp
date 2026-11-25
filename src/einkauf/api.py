@@ -6,6 +6,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from sqlmodel import col, select
 
+from src.einkauf.service import Bestellvorschlag, erstelle_bestellvorschlag
+
 from src.core.deps import MandantDep, SessionDep
 from src.einkauf.models import (
     Artikel,
@@ -100,3 +102,8 @@ def alle_bestellungen(
         )
         for bestellung, lieferant in session.exec(abfrage).all()
     ]
+
+# Controller ruft nur den Service auf – die Rechenlogik steckt in service.py
+@router.get("/bestellvorschlag")
+def bestellvorschlag(session: SessionDep, mandant_id: MandantDep) -> Bestellvorschlag:
+    return erstelle_bestellvorschlag(session, mandant_id)
